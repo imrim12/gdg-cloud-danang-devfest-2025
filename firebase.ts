@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 
 // ------------------------------------------------------------------
 // Firebase Configuration for GDG Cloud Da Nang Devfest 2025
@@ -12,6 +12,7 @@ const firebaseConfig = {
   projectId: "gdg-cloud-danang-devfest-2025",
   storageBucket: "gdg-cloud-danang-devfest-2025.firebasestorage.app",
   messagingSenderId: "489981062500",
+  databaseUrl: "gdg-cloud-danang-devfest-2025.firebasedatabase.app",
   appId: "1:489981062500:web:0f1cec8ecc30d805a8de71"
 };
 
@@ -22,7 +23,19 @@ const app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(f
 // Initialize Services
 // Cast to any to handle potential type mismatches between compat and modular interfaces in some environments
 export const auth = getAuth(app as any);
-export const db = getFirestore(app as any);
+
+// Initialize Firestore with experimentalForceLongPolling to prevent "offline" errors
+// This is common in environments like Cloud Run or certain proxies where WebSockets fail
+let dbInstance;
+try {
+  dbInstance = initializeFirestore(app as any, {
+    experimentalForceLongPolling: true,
+  });
+} catch (error) {
+  // If Firestore is already initialized (e.g. during HMR), use the existing instance
+  dbInstance = getFirestore(app as any);
+}
+export const db = dbInstance;
 
 // Configure Google Provider
 export const googleProvider = new GoogleAuthProvider();

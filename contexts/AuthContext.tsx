@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
-  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -32,26 +33,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to handle login
+  // Helper to process auth errors
+  const handleAuthError = (err: any) => {
+    console.error("Authentication error:", err);
+    
+    let errorMessage = "Failed to sign in with Google.";
+
+    if (err.code === 'auth/popup-closed-by-user') {
+      errorMessage = "Sign-in cancelled.";
+    } else if (err.code === 'auth/unauthorized-domain') {
+      const currentDomain = window.location.hostname;
+      errorMessage = `Domain Unauthorized: Go to Firebase Console > Auth > Settings > Authorized Domains and add: "${currentDomain}"`;
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+    
+    setError(errorMessage);
+  };
+
+  // Function to handle login using Redirect instead of Popup
   const login = async () => {
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
     } catch (err: any) {
-      console.error("Login failed", err);
-      
-      let errorMessage = "Failed to sign in with Google.";
-
-      if (err.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Sign-in cancelled.";
-      } else if (err.code === 'auth/unauthorized-domain') {
-        const currentDomain = window.location.hostname;
-        errorMessage = `Domain Unauthorized: Go to Firebase Console > Auth > Settings > Authorized Domains and add: "${currentDomain}"`;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      setError(errorMessage);
+      handleAuthError(err);
     }
   };
 
@@ -66,6 +72,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
+
+    // Check if we are returning from a redirect login flow
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+            console.log("Redirect login successful");
+        }
+      })
+      .catch((err) => {
+        handleAuthError(err);
+      });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       // Clean up previous snapshot listener if exists
@@ -105,9 +122,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error("Error fetching user profile:", err);
             setLoading(false);
           });
-        } catch (err) {
+        } catch (err: any) {
           console.error("Error setting up user profile:", err);
-          setError("Failed to load user profile.");
+          if (err.message && err.message.includes("offline")) {
+            setError("Network Error: Could not connect to database. Please check your internet connection.");
+          } else {
+            setError("Failed to load user profile.");
+          }
           setLoading(false);
         }
       } else {
