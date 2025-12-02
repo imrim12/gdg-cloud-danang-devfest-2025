@@ -77,14 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-            console.log("Redirect login successful");
+            console.log("Redirect login successful", result.user.uid);
+        } else {
+            console.log("No redirect result found");
         }
       })
       .catch((err) => {
+        console.error("Redirect result error:", err);
         handleAuthError(err);
       });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      console.log("Auth state changed:", user ? "User logged in" : "User logged out", user?.uid);
+      
       // Clean up previous snapshot listener if exists
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();

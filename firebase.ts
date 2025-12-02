@@ -1,4 +1,4 @@
-import firebase from 'firebase/compat/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -16,12 +16,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// Use firebase.apps check to avoid re-initialization in development (Hot Module Replacement)
-const app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Services
-// Cast to any to handle potential type mismatches between compat and modular interfaces in some environments
-export const auth = getAuth(app as any);
+export const auth = getAuth(app);
 
 // Initialize Firestore
 export const db = getFirestore(app);
