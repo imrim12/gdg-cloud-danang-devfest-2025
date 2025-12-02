@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -51,11 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(errorMessage);
   };
 
-  // Function to handle login using Redirect
+  // Function to handle login using Popup
   const login = async () => {
     setError(null);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
       handleAuthError(err);
     }
@@ -72,20 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
-
-    // Check if we are returning from a redirect login flow
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-            console.log("Redirect login successful", result.user.uid);
-        } else {
-            console.log("No redirect result found");
-        }
-      })
-      .catch((err) => {
-        console.error("Redirect result error:", err);
-        handleAuthError(err);
-      });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       console.log("Auth state changed:", user ? "User logged in" : "User logged out", user?.uid);
