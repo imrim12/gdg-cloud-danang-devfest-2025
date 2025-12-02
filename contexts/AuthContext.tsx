@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
-  signInWithRedirect, 
+  signInWithRedirect,
   getRedirectResult,
   signOut, 
   onAuthStateChanged 
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(errorMessage);
   };
 
-  // Function to handle login using Redirect instead of Popup
+  // Function to handle login using Redirect
   const login = async () => {
     setError(null);
     try {
