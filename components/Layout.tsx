@@ -56,15 +56,6 @@ const Navbar: React.FC = () => {
               </NavLink>
             ))}
 
-            {/* Error Message Toast in Nav */}
-            {error && (
-               <div className="flex items-center gap-2 px-3 py-1 bg-gdg-red text-white font-bold text-sm border-2 border-black animate-pulse cursor-pointer" onClick={clearError}>
-                 <AlertCircle className="w-4 h-4" />
-                 {error}
-                 <X className="w-3 h-3 ml-1" />
-               </div>
-            )}
-
             {loading ? (
               <div className="w-8 h-8 rounded-full border-2 border-black bg-gray-200 animate-pulse" />
             ) : userProfile ? (
@@ -124,12 +115,7 @@ const Navbar: React.FC = () => {
               </NavLink>
             ))}
              <div className="h-[2px] w-full bg-black my-2"></div>
-             {error && (
-               <div className="bg-gdg-red text-white p-2 font-bold text-sm border-2 border-black flex items-center justify-between" onClick={clearError}>
-                  <span>{error}</span>
-                  <X className="w-4 h-4" />
-               </div>
-             )}
+             
              {userProfile ? (
                  <div className="flex justify-between items-center">
                     <div className="flex flex-col">
@@ -144,6 +130,28 @@ const Navbar: React.FC = () => {
           </div>
         )}
       </nav>
+
+      {/* Global Error Banner */}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gdg-red text-white border-b-4 border-black overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-start gap-3 font-bold text-sm md:text-base">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="flex-grow break-words">
+                 {error}
+              </div>
+              <button onClick={clearError} className="p-1 hover:bg-black/20 rounded flex-shrink-0">
+                 <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Rules Modal */}
       <AnimatePresence>
