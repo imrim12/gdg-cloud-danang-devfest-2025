@@ -64,7 +64,7 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-4">
                  <div className="flex flex-col items-end">
                     <span className="text-xs font-bold uppercase text-gray-500">Votes Left</span>
-                    <span className="text-lg font-black leading-none text-gdg-red">{userProfile.votesRemaining}</span>
+                    <span className="text-lg font-black leading-none text-gdg-red">{5 - (userProfile.votedSubmissionIds?.length || 0)}</span>
                  </div>
                  <div className="h-8 w-[2px] bg-black"></div>
                  <button onClick={logout} className="flex items-center gap-2 font-bold hover:text-gdg-red">
@@ -121,7 +121,7 @@ const Navbar: React.FC = () => {
              {userProfile ? (
                  <div className="flex justify-between items-center">
                     <div className="flex flex-col">
-                        <span className="text-xs font-bold">Votes Remaining: {userProfile.votesRemaining}</span>
+                        <span className="text-xs font-bold">Votes Remaining: {5 - (userProfile.votedSubmissionIds?.length || 0)}</span>
                         <span className="text-sm truncate max-w-[150px]">{userProfile.displayName}</span>
                     </div>
                     <NeoButton onClick={logout} size="sm" variant="secondary">Logout</NeoButton>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { NeoButton, NeoCard, NeoInput, NeoTextarea } from '../components/NeoUI';
@@ -72,8 +72,17 @@ const SubmitPage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // Use setDoc with user's UID as document ID (each user can only have 1 submission)
-      await setDoc(doc(db, 'submissions', userProfile.uid), {
+      const submissionRef = doc(db, 'submissions', userProfile.uid);
+      
+      // Check if there's an existing submission with voters
+      const existingDoc = await getDoc(submissionRef);
+      const oldVoters: string[] = existingDoc.exists() ? (existingDoc.data()?.voters || []) : [];
+
+      // Use batch to update submission and clean up old voters' history
+      const batch = writeBatch(db);
+
+      // Set the new/updated submission
+      batch.set(submissionRef, {
         title: formData.title,
         description: formData.description,
         prompt: formData.prompt,
@@ -84,6 +93,16 @@ const SubmitPage: React.FC = () => {
         voters: [],
         createdAt: serverTimestamp(),
       });
+
+      // Remove this submission ID from all old voters' votedSubmissionIds
+      for (const odVoterId of oldVoters) {
+        const voterRef = doc(db, 'users', odVoterId);
+        batch.update(voterRef, {
+          votedSubmissionIds: arrayRemove(userProfile.uid)
+        });
+      }
+
+      await batch.commit();
 
       setSuccess(true);
       setTimeout(() => {
