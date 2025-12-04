@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { NeoButton, NeoCard, NeoInput, NeoTextarea } from '../components/NeoUI';
@@ -72,7 +72,8 @@ const SubmitPage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      await addDoc(collection(db, 'submissions'), {
+      // Use setDoc with user's UID as document ID (each user can only have 1 submission)
+      await setDoc(doc(db, 'submissions', userProfile.uid), {
         title: formData.title,
         description: formData.description,
         prompt: formData.prompt,
@@ -80,6 +81,7 @@ const SubmitPage: React.FC = () => {
         authorId: userProfile.uid,
         authorName: userProfile.displayName || 'Anonymous',
         voteCount: 0,
+        voters: [],
         createdAt: serverTimestamp(),
       });
 

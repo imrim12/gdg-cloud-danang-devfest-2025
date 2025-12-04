@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, runTransaction, increment } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Submission } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,51 +28,47 @@ const VotePage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleVote = async (submissionId: string) => {
+  const handleVote = async (submission: Submission) => {
     if (!userProfile) {
         login();
         return;
     }
     
-    if (userProfile.votesRemaining <= 0) {
-        setError("You are out of votes!");
+    // Cannot vote for your own submission
+    if (submission.authorId === userProfile.uid) {
+        setError("You cannot vote for your own submission!");
         setTimeout(() => setError(null), 3000);
         return;
     }
 
-    setVotingId(submissionId);
+    setVotingId(submission.id);
+    const subRef = doc(db, 'submissions', submission.id);
+    const hasVoted = submission.voters?.includes(userProfile.uid);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const userRef = doc(db, 'users', userProfile.uid);
-        const subRef = doc(db, 'submissions', submissionId);
-
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) throw "User does not exist!";
-
-        const userData = userDoc.data();
-        if (userData.votesRemaining <= 0) throw "No votes left!";
-        if (userData.votedSubmissionIds.includes(submissionId)) throw "Already voted for this!";
-
-        transaction.update(userRef, {
-            votesRemaining: increment(-1),
-            votedSubmissionIds: [...userData.votedSubmissionIds, submissionId]
+      if (hasVoted) {
+        // Unvote: remove user from voters and decrement voteCount
+        await updateDoc(subRef, {
+          voteCount: increment(-1),
+          voters: arrayRemove(userProfile.uid)
         });
-
-        transaction.update(subRef, {
-            voteCount: increment(1)
+      } else {
+        // Vote: add user to voters and increment voteCount
+        await updateDoc(subRef, {
+          voteCount: increment(1),
+          voters: arrayUnion(userProfile.uid)
         });
-      });
+      }
     } catch (err) {
       console.error("Vote failed", err);
-      setError("Vote failed. You may have already voted.");
+      setError("Vote failed. Please try again.");
       setTimeout(() => setError(null), 3000);
     } finally {
       setVotingId(null);
     }
   };
 
-  const hasVotedFor = (id: string) => userProfile?.votedSubmissionIds?.includes(id);
+  const hasVotedFor = (submission: Submission) => submission.voters?.includes(userProfile?.uid || '');
 
   if (loading) {
       return (
@@ -107,7 +103,7 @@ const VotePage: React.FC = () => {
           <NeoCard key={sub.id} className="flex flex-col h-full hover:border-gdg-blue transition-colors duration-300">
             <div className="flex justify-between items-start mb-4">
                 <NeoBadge color="yellow">Votes: {sub.voteCount}</NeoBadge>
-                {hasVotedFor(sub.id) && <NeoBadge color="green">Voted</NeoBadge>}
+                {hasVotedFor(sub) && <NeoBadge color="green">Voted</NeoBadge>}
             </div>
             
             <h3 className="text-2xl font-black mb-2 leading-tight">{sub.title}</h3>
@@ -132,14 +128,14 @@ const VotePage: React.FC = () => {
                     </NeoButton>
                 </a>
                 <NeoButton 
-                    variant={hasVotedFor(sub.id) ? 'secondary' : 'primary'}
-                    className={`flex-1 ${hasVotedFor(sub.id) ? 'opacity-50' : ''}`}
-                    onClick={() => handleVote(sub.id)}
-                    disabled={hasVotedFor(sub.id) || (userProfile?.votesRemaining === 0)}
+                    variant={hasVotedFor(sub) ? 'secondary' : 'primary'}
+                    className={`flex-1 ${sub.authorId === userProfile?.uid ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handleVote(sub)}
+                    disabled={sub.authorId === userProfile?.uid}
                     isLoading={votingId === sub.id}
                 >
-                    <Heart className={`w-4 h-4 mr-2 ${hasVotedFor(sub.id) ? 'fill-black' : ''}`} />
-                    Vote
+                    <Heart className={`w-4 h-4 mr-2 ${hasVotedFor(sub) ? 'fill-black' : ''}`} />
+                    {hasVotedFor(sub) ? 'Unvote' : 'Vote'}
                 </NeoButton>
             </div>
           </NeoCard>

@@ -15,6 +15,7 @@ export interface Submission {
   authorId: string;
   authorName: string;
   voteCount: number;
+  voters: string[]; // Array of user IDs who voted
   createdAt: any; // Firestore Timestamp
 }
 
