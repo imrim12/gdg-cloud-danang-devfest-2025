@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, arrayUnion, arrayRemove, increment, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Submission } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,24 +41,51 @@ const VotePage: React.FC = () => {
         return;
     }
 
+    // Check if already voted for this submission
+    const currentVotes = userProfile.votedSubmissionIds?.length || 0;
+    const isVoting = !userProfile.votedSubmissionIds?.includes(submission.id);
+
+    // Check 5 vote limit (only when voting, not unvoting)
+    if (isVoting && currentVotes >= 5) {
+        setError("You have used all 5 votes!");
+        setTimeout(() => setError(null), 3000);
+        return;
+    }
+
     setVotingId(submission.id);
-    const subRef = doc(db, 'submissions', submission.id);
-    const hasVoted = submission.voters?.includes(userProfile.uid);
 
     try {
-      if (hasVoted) {
-        // Unvote: remove user from voters and decrement voteCount
-        await updateDoc(subRef, {
+      // Use batch write for atomic updates
+      const batch = writeBatch(db);
+      const subRef = doc(db, 'submissions', submission.id);
+      const userRef = doc(db, 'users', userProfile.uid);
+
+      if (!isVoting) {
+        // --- UNVOTE ---
+        // A. Update submission: decrement voteCount, remove from voters
+        batch.update(subRef, {
           voteCount: increment(-1),
           voters: arrayRemove(userProfile.uid)
         });
+        // B. Update user profile: remove submission from votedSubmissionIds
+        batch.update(userRef, {
+          votedSubmissionIds: arrayRemove(submission.id)
+        });
       } else {
-        // Vote: add user to voters and increment voteCount
-        await updateDoc(subRef, {
+        // --- VOTE ---
+        // A. Update submission: increment voteCount, add to voters
+        batch.update(subRef, {
           voteCount: increment(1),
           voters: arrayUnion(userProfile.uid)
         });
+        // B. Update user profile: add submission to votedSubmissionIds
+        batch.update(userRef, {
+          votedSubmissionIds: arrayUnion(submission.id)
+        });
       }
+
+      // Commit all updates atomically
+      await batch.commit();
     } catch (err) {
       console.error("Vote failed", err);
       setError("Vote failed. Please try again.");
@@ -68,7 +95,10 @@ const VotePage: React.FC = () => {
     }
   };
 
-  const hasVotedFor = (submission: Submission) => submission.voters?.includes(userProfile?.uid || '');
+  const hasVotedFor = (submissionId: string) => userProfile?.votedSubmissionIds?.includes(submissionId) || false;
+
+  const votesUsed = userProfile?.votedSubmissionIds?.length || 0;
+  const votesRemaining = 5 - votesUsed;
 
   if (loading) {
       return (
@@ -83,9 +113,16 @@ const VotePage: React.FC = () => {
   return (
     <div>
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter">
-            Gallery
-        </h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-4xl font-black uppercase italic tracking-tighter">
+              Gallery
+          </h1>
+          {userProfile && (
+            <NeoBadge color={votesRemaining > 0 ? 'blue' : 'red'}>
+              {votesRemaining}/5 votes left
+            </NeoBadge>
+          )}
+        </div>
         {error && (
             <motion.div 
                 initial={{ opacity: 0, y: -20 }}
@@ -103,7 +140,7 @@ const VotePage: React.FC = () => {
           <NeoCard key={sub.id} className="flex flex-col h-full hover:border-gdg-blue transition-colors duration-300">
             <div className="flex justify-between items-start mb-4">
                 <NeoBadge color="yellow">Votes: {sub.voteCount}</NeoBadge>
-                {hasVotedFor(sub) && <NeoBadge color="green">Voted</NeoBadge>}
+                {hasVotedFor(sub.id) && <NeoBadge color="green">Voted</NeoBadge>}
             </div>
             
             <h3 className="text-2xl font-black mb-2 leading-tight">{sub.title}</h3>
@@ -128,14 +165,14 @@ const VotePage: React.FC = () => {
                     </NeoButton>
                 </a>
                 <NeoButton 
-                    variant={hasVotedFor(sub) ? 'secondary' : 'primary'}
-                    className={`flex-1 ${sub.authorId === userProfile?.uid ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    variant={hasVotedFor(sub.id) ? 'secondary' : 'primary'}
+                    className={`flex-1 ${sub.authorId === userProfile?.uid || (!hasVotedFor(sub.id) && votesRemaining <= 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     onClick={() => handleVote(sub)}
-                    disabled={sub.authorId === userProfile?.uid}
+                    disabled={sub.authorId === userProfile?.uid || (!hasVotedFor(sub.id) && votesRemaining <= 0)}
                     isLoading={votingId === sub.id}
                 >
-                    <Heart className={`w-4 h-4 mr-2 ${hasVotedFor(sub) ? 'fill-black' : ''}`} />
-                    {hasVotedFor(sub) ? 'Unvote' : 'Vote'}
+                    <Heart className={`w-4 h-4 mr-2 ${hasVotedFor(sub.id) ? 'fill-black' : ''}`} />
+                    {hasVotedFor(sub.id) ? 'Unvote' : 'Vote'}
                 </NeoButton>
             </div>
           </NeoCard>
