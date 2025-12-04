@@ -24,11 +24,13 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 group">
-            <div className="bg-gdg-blue p-2 border-2 border-black shadow-[2px_2px_0px_0px_#000] group-hover:bg-gdg-yellow transition-colors">
-              <Code className="text-white group-hover:text-black w-6 h-6" />
-            </div>
+            <img 
+              src="https://dut.gdsc.dev/static/media/GDSC_Icon.665f1462ba5cded266fc.png" 
+              alt="GDG Logo" 
+              className="w-10 h-10 border-2 border-black shadow-[2px_2px_0px_0px_#000]"
+            />
             <span className="text-xl md:text-2xl font-black tracking-tighter hidden sm:block">
-              VIBE<span className="text-gdg-blue">CODE</span>_2025
+              GDG Cloud Da Nang <span className="text-gdg-blue">Devfest</span> 2025
             </span>
           </NavLink>
 

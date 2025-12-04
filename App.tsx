@@ -13,7 +13,11 @@ const HomePage: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-8">
             <div className="relative">
                 <div className="absolute inset-0 bg-gdg-yellow blur-xl opacity-50 rounded-full animate-pulse"></div>
-                <Code className="w-32 h-32 relative z-10 text-black" strokeWidth={1.5} />
+                <img 
+                    src="https://dut.gdsc.dev/static/media/GDSC_Icon.665f1462ba5cded266fc.png" 
+                    alt="GDG Logo" 
+                    className="w-32 h-32 relative z-10"
+                />
             </div>
             
             <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
