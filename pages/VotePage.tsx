@@ -162,7 +162,7 @@ const VotePage: React.FC = () => {
             
             <p className="mb-4 text-gray-700 flex-grow line-clamp-3">{sub.description}</p>
             
-            <div className="bg-gray-50 p-3 border-2 border-gray-200 mb-6 text-xs font-mono overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="bg-gray-50 p-3 border-2 border-gray-200 mb-6 text-xs font-mono max-h-[150px] overflow-y-auto">
                 <span className="font-bold text-gray-400 select-none">$ </span>{sub.prompt}
             </div>
 

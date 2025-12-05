@@ -208,7 +208,7 @@ const SubmitPage: React.FC = () => {
               onChange={handleChange}
             />
             <p className="text-sm text-gray-500 mt-1">
-              Mẹo: Bạn có thể upload ảnh miễn phí tại <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-gdg-blue underline font-bold">imgbb.com</a> sau đó copy "Direct Link" dán vào đây.
+              Tip: You can upload images for free at <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-gdg-blue underline font-bold">imgbb.com</a>. After uploading, select "HTML full linked" and copy the URL inside the <code className="bg-gray-100 px-1">src="..."</code> attribute.
             </p>
           </div>
 
