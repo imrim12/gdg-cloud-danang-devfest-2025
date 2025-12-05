@@ -14,7 +14,8 @@ const SubmitPage: React.FC = () => {
     title: '',
     description: '',
     prompt: '',
-    link: ''
+    link: '',
+    authorPhotoURL: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -59,13 +60,18 @@ const SubmitPage: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    if (!formData.title || !formData.description || !formData.prompt || !formData.link) {
+    if (!formData.title || !formData.description || !formData.prompt || !formData.link || !formData.authorPhotoURL) {
       setError('All fields are required!');
       return;
     }
 
     if (!validateUrl(formData.link)) {
-        setError('Please enter a valid URL (include http:// or https://)');
+        setError('Please enter a valid Project URL (include http:// or https://)');
+        return;
+    }
+
+    if (!validateUrl(formData.authorPhotoURL)) {
+        setError('Please enter a valid Thumbnail URL (include http:// or https://)');
         return;
     }
 
@@ -89,6 +95,7 @@ const SubmitPage: React.FC = () => {
         link: formData.link,
         authorId: userProfile.uid,
         authorName: userProfile.displayName || 'Anonymous',
+        authorPhotoURL: formData.authorPhotoURL,
         voteCount: 0,
         voters: [],
         createdAt: serverTimestamp(),
@@ -191,6 +198,19 @@ const SubmitPage: React.FC = () => {
             value={formData.link}
             onChange={handleChange}
           />
+
+          <div className="mb-4">
+            <NeoInput 
+              label="AI generated thumbnail image about your project"
+              name="authorPhotoURL"
+              placeholder="https://i.ibb.co/..."
+              value={formData.authorPhotoURL}
+              onChange={handleChange}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Mẹo: Bạn có thể upload ảnh miễn phí tại <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-gdg-blue underline font-bold">imgbb.com</a> sau đó copy "Direct Link" dán vào đây.
+            </p>
+          </div>
 
           <div className="mt-8 flex justify-end">
             <NeoButton 

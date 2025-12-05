@@ -14,6 +14,7 @@ export interface Submission {
   link: string;
   authorId: string;
   authorName: string;
+  authorPhotoURL: string; // AI generated thumbnail image
   voteCount: number;
   voters: string[]; // Array of user IDs who voted
   createdAt: any; // Firestore Timestamp

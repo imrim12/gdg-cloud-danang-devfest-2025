@@ -138,6 +138,20 @@ const VotePage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {submissions.map((sub) => (
           <NeoCard key={sub.id} className="flex flex-col h-full hover:border-gdg-blue transition-colors duration-300">
+            {/* Thumbnail Image */}
+            {sub.authorPhotoURL && (
+              <div className="-mx-6 -mt-6 mb-4 border-b-4 border-black overflow-hidden">
+                <img 
+                  src={sub.authorPhotoURL} 
+                  alt={`${sub.title} thumbnail`}
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
             <div className="flex justify-between items-start mb-4">
                 <NeoBadge color="yellow">Votes: {sub.voteCount}</NeoBadge>
                 {hasVotedFor(sub.id) && <NeoBadge color="green">Voted</NeoBadge>}
